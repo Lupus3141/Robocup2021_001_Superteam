@@ -102,130 +102,87 @@ void setup() {
 }
 
 void loop() {
-	readString = "";
+	//pln(getXOrientation());
+	if (Serial2.available() > 0) {
+		String incomingString = Serial2.readString();
+		//incomingString.trim();
+		//bool a = incomingString.indexOf(":") != -1;
+		//if(a) {
+			String xval = getValue(incomingString, ':', 0);
+			String yval = getValue(incomingString, ':', 1);
+			String zval = getValue(incomingString, ':', 2);
+			int motorleft = xval.toInt();
+			int motorright = yval.toInt();
+			int duration = zval.toInt();   
+			pln(incomingString);
+		//}
 
-	while (Serial2.available()) { //receive data from raspi
-		delay(4);
-		if (Serial2.available() > 0) {
-			char c = Serial2.read();
-			readString += c;
-		}
-	}
-
-	if (readString != "") {
-		Serial.println(readString);
-		if (readString == "L") {
-			led(1, 0, 0);
-			drive(255, 255, 800);
-			turnRelative(-75);
-			drive(-255, -255, 250);
-			drive(255, 255, 1);
-			led(0, 0, 0);   
-		} if (readString == "A") {
-			drive(0, 0, 0);
+		if (incomingString.indexOf("armUp") != -1) {
 			drive(0, 0, 0);
 			beep(100);
-			turnRelative(-15);
-			turnRelative(180);
-			drive(-255, -255, 50);
-			drive(0, 0, 0);
-			armDown();
 			armUp();
-			turnRelative(180);
-			turnRelative(20);
-		} if (readString.indexOf("E") != -1) {
+			Serial2.println(1);
+		} if (incomingString.indexOf("turn90") != -1) {
+			drive(0, 0, 0);
+			turnAbsolute(90.0f);
+			Serial2.println(1);
+		} if (incomingString.indexOf("turn180") != -1) {
+			drive(0, 0, 0);
+			turnAbsolute(180.0f);
+			Serial2.println(1);
+		} if (incomingString.indexOf("dropRescueKit") != -1) {
+			drive(0, 0, 0);
+			servoString.attach(22);
+			servoString.write(180); //loose rope
+			delay(700);
+			servoString.detach();
+
+			servoArm.attach(23);
+			servoArm.write(110); //arm down
+			delay(900);
+			servoArm.detach();
+			for (int i = 0; i < 6; i++) {				
+				drive(255, 255, -50);
+				drive(255, 255, 50);
+			}
+		} if (incomingString.indexOf("setOrigin") != -1) {
+			origin = getXOrientation();
+			beep(50);
+			p("origin set to: ");
+			p(origin);
+			pln("");
+			Serial2.println(1);
+		} if (incomingString == "armDown") {
+			Serial.println("ARMDOWN RECEIVED");
 			drive(0, 0, 0);
 			beep(100);
-			turnRelative(-70);
-			drive(150, 150, 200);
-			drive(0, 0, 0);
-		}if (readString == "I") {
-			drive(255, 255, 550);
-		} if (readString == "IR") {
-			drive(0, 0, 0);
-			led(1, 0, 0);
-			drive(255, -255, 100);
-			drive(255, 255, 550);
-		} if (readString == "IL") {
-			drive(0, 0, 0);
-			led(0, 0, 1);
-			drive(-255, 255, 100);
-			drive(255, 255, 550);
-		} if (readString == "R") {
-			led(0, 0, 0);
-			drive(255, 255, 800);
-			turnRelative(75);
-			drive(-255, -255, 250);
-			drive(255, 255, 1);
-			led(0, 0, 0);
-		} if (readString == "D") {
-			led(1, 1, 1);
-			drive(255, 255, 300);
-			turnRelative(180);      
-			drive(-255, -255, 500);
-			drive(255, 255, 1);
-		} if (readString.indexOf("STOP") != -1) {
-			drive(255, 255, 200);
-			servoString.write(180); //loose rope
-			drive(0, 0, 100000);
-		} else if (readString.indexOf("S") != -1) {
-			drive(255, 255, 400);
-		} if (readString == "gapR") {
-			drive(0, 0, 0);
-			beep(50);
-			drive(255, -255, 100);
-			drive(0, 0, 0);
-		} if (readString == "gapL") {
-			drive(0, 0, 0);
-			beep(50);
-			drive(-255, 255, 100);
-			drive(0, 0, 0);
-		} if (readString == "Rescuekit") {
-			beep(2000);
-		}if (readString == "Rescue") { //Raspi says: there is the rescue area because he did not see a line for 10 frames
-			drive(0, 0, 0);
-			led(1, 0, 1);
-			if (rescueFlag == false && distanceAvg() < 2000 && distanceAvg() > 500) { //checks if distance fits
-				drive(0, 0, 0);
-				led(1, 0, 0);
-				Serial2.println("8"); //sends a 8 to the raspi to verify the entrance of the evacuation zone
-				rescue();
-			} else {
-				drive(0, 0, 0);
-				led(0, 0, 1);
-				Serial2.println(6); //sends a 6 because there can't be the rescue area
-			}
+			armDown();
+			Serial2.println(1);
+		} if (incomingString.indexOf("turnToOrigin") != -1) {
+			turnAbsolute(origin);
+			Serial2.println(1);
 		} else {
-			String newReadString = "";
-			for(int i = 0; i < readString.length(); i++) {
-				char c = readString[i];
-				if(c == '-' || c == '.' || c == '0' || c == '1' || 
-					c == '2' || c == '3' || c == '4' || c == '5' ||
-					c == '6' || c == '7' || c == '8' || c == '9') {
-					newReadString += c;
-				}
-			}
+			Serial.println("IN ELSE");
+			/*
+			p(motorleft);
+			p("  ");
+			p(motorright);
+			pln("");
+			*/
+			if (motorleft == 0 && motorright == 0) {
+				if (duration == 0) { //turn to origin
 
-			//Linefollowing
-			int x = newReadString.toInt();
-
-			if (x < 200 && x > -200) {
-
-				int motorSpeedL = MOTORSPEED + x * SENSITIVITY;
-				int motorSpeedR = MOTORSPEED - x * SENSITIVITY;
-
-				if (getYOrientation() > 15.00) {   
-					drive(motorSpeedL * 1.5, motorSpeedR * 1.5, 0); 
-				} else if (getYOrientation() < -15.00) {
-					drive(motorSpeedL * 0.5, motorSpeedR * 0.5, 0);
 				} else {
-					drive(motorSpeedL, motorSpeedR, 0);					
+					turnRelative(duration);
+					Serial2.println(1);
 				}
+			} else {
+				drive(motorleft, motorright, duration);
+				drive(0, 0, 0);
+				Serial2.println(1);
 			}
 		}
 	}
-	obstacle3();
-	//obstacle();
 }
 
 void beep(int duration) {
@@ -261,17 +218,42 @@ void drive(int left, int right, int duration) {
 	delay(duration);
 }
 
-void turnAbsolute(float pos) {	
-	if (pos > getXOrientation()) {
-		while (getXOrientation() < pos - 2.0) {
+void turnAbsolute(float pos) {
+	//if(pos > 180) pos -= 360.0;
+	//if(pos < -180) pos += 360.0;
+	float p = pos;
+	if(abs(pos - getXOrientation()) > 180.0f) {
+		p += 360.0f;
+	}
+	pln(pos);
+	pln(p);
+	pln(getXOrientation());
+	if (p > getXOrientation()) {
+		bool t = getXOrientation() < p - 2.0f;
+		while (t) {
 			drive(130, -130, 0);
+			if(abs(getXOrientation() - p) > 180.0f) {
+				t = getXOrientation() < pos - 2.0f;
+			} else {
+				t = getXOrientation() < p - 2.0f;
+			}
 		}
+	} else if (pos == getXOrientation()) {
+		return;
 	} else {
-		while (getXOrientation() > pos + 2.0) {
+		float lastOrientation = getXOrientation();
+		float orientation = lastOrientation;
+		bool overflow = false;
+		while (orientation + (overflow ? 360.0f : 0.0f) > p + 2.0f) {
+			orientation = getXOrientation();
+			if(abs(orientation - lastOrientation) > 180.0f) overflow = true;
 			drive(-130, 130, 0);
+			lastOrientation = orientation;
 		}
 	}
 	drive(0, 0, 0);
+
+	//while(true) {}
 }
 
 void turnRelative(float deg) {
