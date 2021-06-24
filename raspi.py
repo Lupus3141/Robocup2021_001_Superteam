@@ -25,6 +25,7 @@ import serial
 import random
 import os
 import math
+import requests
 
 CUT = (0, 320, 140, 192)
 
@@ -180,41 +181,96 @@ y = 0
 dirx = 1
 diry = 0
 
-hasRescueKit = False
-goalTileX = 2
-goalTileY = 1
+def driveToTile(tx, ty:float, offset = 0, yoffset: float = 0):
+	ty = ty + yoffset
+	angle = math.atan2((ty - float(y)), float(tx - x))
+	turnRelative(angle * 360 / 2 / math.pi)
+	dirx = math.cos(angle)
+	diry = math.sin(angle)
+	print(angle * 360 / 2 / math.pi)
+	print("dirx ",dirx)
+	print("diry ",diry)
+	#sendAndWait("setOrigin")
 
+	h = math.sqrt(math.pow(tx - x, 2) + math.pow(ty - y, 2))
+	print(h)
+	drive(255, 255, h * 1050 - offset)
+
+def readInt():
+	res = requests.get("http://robocup.evb-gymnasium.de/int.bin", stream=True)
+	return int.from_bytes(res.raw.read(1), byteorder="big")
+
+map = [
+	[1, 2, 4, 7],
+	[3, 5, 8, 10],
+	[6, 9, 11, 12],
+]
+
+def convert(i):
+	for y in range(3):
+		for x in range(4):
+			if(map[y][x] == i):
+				return (x, y)
+	return (3, 2)
+
+hasRescueKit = False
 #lineAdjust()
+
+i = readInt()
+print(f"i={i}")
+while i == 0:
+	i = readInt()
+	print(str(i))
+	time.sleep(2)
+
+goalTileX, goalTileY = convert(i)
 
 while True:
 	#cv2.setMouseCallback("mouseRGB", mouseRGB)
 	pos, cy = rescueKit()
 	if pos != 300:
 		#searchRescueKit()
+		hasRescueKit = True
 		print("NICE")
 
 		if(cy < 120):
-			drive(255, 255, (130 - cy) * 1.5)
+			drive(180, 180, (130 - cy) * 1.5)
+		if(cy > 150):
+			drive(-130, -130, 30)
 		if(abs(pos) > 10):
 			turnRelative(pos / 4)
 
-		if(cy > 115 and abs(pos) <= 10):
+		if(151 > cy > 115 and abs(pos) <= 10):
 			drive(-200, -200, 50)
-			turnRelative(190)
-			drive(-200, -200, 100)
+			turnRelative(180)
+			drive(-200, -200, 85)
 			armDown()
-			drive(-150, 150, 50)
-			drive(150, -150, 100)
-			drive(-150, 150, 50)
 			armUp()
 			sendAndWait("turnToOrigin")
 
-			turnRelative(math.atan2((goalTileY - y), (goalTileX - x)))
-			h = math.sqrt(math.pow(goalTileX - x, 2) + math.pow(goalTileY - y, 2))
-			drive(255, 255, h * 1000)
-			sendAndWait("dropRescueKit")
+			x = x + dirx * 0.6
+			y = y + diry * 0.6
 
-	else:
+			driveToTile(goalTileX, goalTileY)
+			#drive(255, 255, 300)
+			drive(-200, -200, 200)
+			turnRelative(180)
+			sendAndWait("dropRescueKit")
+			drive(200, 200, 200)
+			#armUp()
+			
+			x = goalTileX - dirx * 0.3
+			y = goalTileY - diry * 0.3
+
+			sendAndWait("turnToOrigin")
+			#x = goalTileX
+			#y = goalTileY
+
+			driveToTile(0, 0, 100, -0.35)
+			sendAndWait("turnToOrigin")
+			exit()
+
+	elif not hasRescueKit:
 		drive(255, 255, 1050)
 		x = x + dirx
 		y = y + diry
@@ -232,14 +288,14 @@ while True:
 			drive(-200, -200, 100)
 			sendAndWait("turn90")
 
-			drive(255, 255, 50)
+			drive(255, 255, 20)
 		elif(x == 3 and y == 1):
 			dirx = -1
 			diry = 0
 
 			#turnRelative(90)
 			sendAndWait("turn180")
-			#drive(255, 255, 150)
+			drive(255, 255, 40)
 		elif(x == 0 and y == 1):
 			dirx = 0
 			diry = 1

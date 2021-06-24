@@ -138,16 +138,20 @@ void loop() {
 			servoString.detach();
 
 			servoArm.attach(23);
-			servoArm.write(110); //arm down
+			servoArm.write(135); //arm down
 			delay(900);
+			servoArm.write(10);
+			delay(700);
 			servoArm.detach();
-			for (int i = 0; i < 6; i++) {				
-				drive(255, 255, -50);
+			beep(500);
+			Serial2.println(1);
+			/*for (int i = 0; i < 6; i++) {				
 				drive(255, 255, 50);
-			}
+				drive(255, 255, 50);
+			}*/
 		} if (incomingString.indexOf("setOrigin") != -1) {
 			origin = getXOrientation();
-			beep(50);
+			//beep(50);
 			p("origin set to: ");
 			p(origin);
 			pln("");
@@ -155,7 +159,7 @@ void loop() {
 		} if (incomingString == "armDown") {
 			Serial.println("ARMDOWN RECEIVED");
 			drive(0, 0, 0);
-			beep(100);
+			//beep(100);
 			armDown();
 			Serial2.println(1);
 		} if (incomingString.indexOf("turnToOrigin") != -1) {
@@ -376,18 +380,25 @@ void armHalfDown() {
 	servoString.detach();
 
 	servoArm.attach(23);
-	servoArm.write(140); //arm done
+	servoArm.write(160); //arm done
 	delay(900);
 	servoArm.detach();
 }
 
 void armUp() {
+	servoArm.attach(23);
+	servoArm.write(180);
+
+	for(int i = 0; i < 4; i++) {
+		drive(150, 150, 100);
+		drive(-150, -150, 100);
+	}
+	drive(0, 0, 0);
 	servoString.attach(22);
 	servoString.write(0); //tighten rope
 	delay(700);
 	servoString.detach();
 
-	servoArm.attach(23);
 	servoArm.write(30); //arm up
 	delay(900);
 	servoArm.detach();

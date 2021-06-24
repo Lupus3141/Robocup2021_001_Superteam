@@ -18,6 +18,8 @@ def readInt():
 	res = requests.get("http://robocup.evb-gymnasium.de/int.bin", stream=True)
 	return int.from_bytes(res.raw.read(1), byteorder="big")
 
-writeInt(3)
+i = int(input("Number: "))
+
+writeInt(i)
 
 print(readInt())
