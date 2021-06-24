@@ -123,7 +123,7 @@ def lineAdjust():
 		exit()
 
 
-def rescueKit():
+def rescueKit(c):
 	rawCapture = PiRGBArray(camera)
 	camera.capture(rawCapture, format="bgr")
 	image = rawCapture.array
@@ -144,6 +144,9 @@ def rescueKit():
 		x, y, w, h = b
 		pos = x + w / 2 - 160
 
+		cv2.rectangle(image_rgb, (x, y), (x + w, y + h), (50, 50, 200), 2)
+		cv2.putText(image_rgb, str(pos), (x, y + h + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (50, 50, 200), 2, cv2.LINE_AA)
+
 		#if(y < 120):
 		#	drive(200, 200, 30)
 		
@@ -160,13 +163,15 @@ def rescueKit():
 		#	armDown()
 		#	armUp()
 		#	return
+		cv2.imwrite("/home/pi/Desktop/image" + str(c) + ".png", image_rgb)
 		return (pos, y)
 	else:
 		return (300, 0)
 
 	cv2.imshow("Rescuekit", rescuekit)
-	cv2.imshow("Image", image_rgb)
+	#cv2.imshow("Image", image_rgb)
 
+	print("Saved")
 	rawCapture.truncate(0)
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord("q"):
@@ -225,10 +230,13 @@ while i == 0:
 
 goalTileX, goalTileY = convert(i)
 
+c = 0
+
 while True:
 	#cv2.setMouseCallback("mouseRGB", mouseRGB)
-	pos, cy = rescueKit()
+	pos, cy = rescueKit(c)
 	if pos != 300:
+		c = c + 1
 		#searchRescueKit()
 		hasRescueKit = True
 		print("NICE")
